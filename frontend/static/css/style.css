@@ -1,0 +1,129 @@
+:root {
+    --bg-color: #fdfcf0;
+    --card-bg: #ffffff;
+    --primary: #ffafb0;
+    --secondary: #ffecc2;
+    --text-color: #555;
+    --shadow: 0 10px 20px rgba(0,0,0,0.05);
+    --radius: 20px;
+}
+
+body {
+    font-family: 'Noto Sans KR', sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+}
+
+.card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 30px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+h1 {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+h2 {
+    font-size: 1.4rem;
+    margin-bottom: 20px;
+}
+
+input[type="text"], input[type="password"], input[type="time"] {
+    width: 100%;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid #eee;
+    border-radius: 12px;
+    box-sizing: border-box;
+    font-size: 1rem;
+    background: #fafafa;
+}
+
+button {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    background: var(--primary);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.1s;
+    margin-bottom: 10px;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+button.secondary {
+    background: var(--secondary);
+    color: #555;
+}
+
+.hidden {
+    display: none;
+}
+
+.mission-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.option-btn {
+    background: #f0f0f0;
+    color: #333;
+}
+
+.option-btn:hover {
+    background: #e0e0e0;
+}
+
+#message {
+    margin-top: 15px;
+    font-weight: bold;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    background: #fff;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+
+li button {
+    width: auto;
+    padding: 5px 10px;
+    font-size: 0.8rem;
+    margin-bottom: 0;
+    background: #ff8a8a;
+}
