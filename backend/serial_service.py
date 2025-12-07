@@ -3,6 +3,7 @@ import threading
 import time
 import re
 from .config import settings
+import sys # sys 모듈 임포트
 
 # Global storage for latest sensor data
 latest_sensor_data = {
@@ -40,11 +41,25 @@ def parse_arduino_line(line: str):
 def read_serial_loop():
     print(f"Attempting to connect to Arduino at {settings.SERIAL_PORT}...")
     ser = None
+    original_port = settings.SERIAL_PORT
+    
     while not stop_event.is_set():
         try:
             if ser is None:
-                ser = serial.Serial(settings.SERIAL_PORT, settings.SERIAL_BAUDRATE, timeout=1)
-                print(f"Connected to Arduino on {settings.SERIAL_PORT}")
+                port_to_try = original_port
+                # 윈도우에서 COM10 이상의 포트는 특별한 접두사가 필요할 수 있음
+                if sys.platform == "win32" and original_port.startswith("COM"):
+                    try:
+                        port_num = int(original_port[3:])
+                        if port_num >= 10:
+                            port_to_try = f"\\\\.\\{original_port}"
+                            print(f"Windows COM10+ 포트 감지, 다음으로 시도: {port_to_try}")
+                    except ValueError:
+                        # COM 뒤에 숫자가 아닌 다른 문자가 오는 경우 (예: COM_A)는 무시
+                        pass
+
+                ser = serial.Serial(port_to_try, settings.SERIAL_BAUDRATE, timeout=1)
+                print(f"Connected to Arduino on {port_to_try}")
             
             if ser.in_waiting > 0:
                 line = ser.readline().decode('utf-8', errors='ignore').strip()
