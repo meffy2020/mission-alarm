@@ -9,18 +9,8 @@
 </head>
 <body>
     <div class="container">
-        <!-- Login Section -->
-        <div id="login-section" class="card">
-            <h1>로그인</h1>
-            <input type="text" id="username" placeholder="아이디" value="user1">
-            <input type="password" id="password" placeholder="비밀번호" value="password">
-            <button onclick="login()">로그인</button>
-            <button class="secondary" onclick="register()">회원가입</button>
-            <p id="login-msg"></p>
-        </div>
-
         <!-- Dashboard Section -->
-        <div id="dashboard-section" class="card hidden">
+        <div id="dashboard-section" class="card">
             <h1>내 스케줄</h1>
             <p>알람을 받을 시간을 설정하세요.</p>
             <div style="display: flex; gap: 10px;">
@@ -28,72 +18,21 @@
                 <button style="width: 80px;" onclick="addSchedule()">추가</button>
             </div>
             <ul id="schedule-list"></ul>
-            <button class="secondary" onclick="logout()">로그아웃</button>
             <button onclick="window.location.href='/mission/start'">미션 테스트 하러가기</button>
         </div>
     </div>
 
     <script src="/static/js/main.js"></script>
     <script>
-        // Auto login check
-        if (getToken()) {
-            showDashboard();
-        }
-
-        async function login() {
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            const formData = new FormData();
-            formData.append('username', username);
-            formData.append('password', password);
-
-            try {
-                const res = await fetch('/auth/token', {
-                    method: 'POST',
-                    body: formData
-                });
-                
-                if (res.ok) {
-                    const data = await res.json();
-                    setToken(data.access_token);
-                    showDashboard();
-                } else {
-                    document.getElementById('login-msg').innerText = "로그인 실패";
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
-
-        async function register() {
-             const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            
-            try {
-                const res = await fetch('/auth/register', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({username, password})
-                });
-                if(res.ok) {
-                    alert("회원가입 성공! 로그인해주세요.");
-                } else {
-                    alert("회원가입 실패");
-                }
-            } catch (e) {
-                console.error(e);
-            }
-        }
+        // Load schedules on start
+        showDashboard();
 
         function showDashboard() {
-            document.getElementById('login-section').classList.add('hidden');
-            document.getElementById('dashboard-section').classList.remove('hidden');
             loadSchedules();
         }
 
         async function loadSchedules() {
-            const res = await fetch('/schedule/', { headers: getAuthHeaders() });
+            const res = await fetch('/schedule/');
             if (res.ok) {
                 const schedules = await res.json();
                 const list = document.getElementById('schedule-list');
@@ -112,7 +51,7 @@
             
             const res = await fetch('/schedule/', {
                 method: 'POST',
-                headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ time_of_day: time })
             });
             
@@ -123,8 +62,7 @@
 
         async function deleteSchedule(id) {
             const res = await fetch(`/schedule/${id}`, {
-                method: 'DELETE',
-                headers: getAuthHeaders()
+                method: 'DELETE'
             });
             if (res.ok) loadSchedules();
         }

@@ -1,0 +1,50 @@
+sequenceDiagram
+    participant User as "👤 사용자점"
+    participant Web as "💻 웹 프론트엔드점"
+    participant Server as "⚙️ FastAPI 서버점"
+    participant DB as "🗄️ 데이터베이스점"
+    participant Arduino as "🤖 아두이노점"
+
+    %% 1. 센서 데이터 수집 루프
+    rect rgb(240, 255, 240)
+        Note over Arduino, Server: "[백그라운드] 실시간 센서 데이터 수집점"
+        loop "0.2초 간격점"
+            Arduino->>Arduino: "거리/조도 측정점"
+            Arduino->>Server: "시리얼 데이터 전송 (USB)점"
+            Server->>Server: "메모리에 최신값 갱신점"
+        end
+    end
+
+    %% 2. 알람 프로세스
+    rect rgb(255, 245, 230)
+        Note over Server, User: "[스케줄러] 알람 발송점"
+        loop "1분 간격점"
+            Server->>DB: "현재 시간 스케줄 조회점"
+            DB-->>Server: "스케줄 있음점"
+            Server->>User: "💬 카카오톡 알림 발송 (링크 포함)점"
+        end
+    end
+
+    %% 3. 미션 수행 프로세스
+    User->>Web: "🔗 알림 링크 클릭 (/mission/start)점"
+    Web->>Server: "랜덤 미션 요청점"
+    Server-->>Web: "미션 정보 반환 (타입: 센서, 조건: 거리 < 10cm)점"
+    
+    Note over User, Arduino: "미션 수행 시작점"
+    
+    loop "폴링 (0.5초 간격)점"
+        Web->>Server: "현재 센서값 요청점"
+        Server-->>Web: "{거리: 15cm, 조도: 300lux}점"
+        Web->>User: "화면 게이지 업데이트점"
+        User->>Arduino: "👋 손을 가까이 댐 (센서 조작)점"
+    end
+    
+    Web->>Server: "현재 센서값 재요청점"
+    Server-->>Web: "{거리: 8cm} (조건 만족!)점"
+    
+    Web->>Server: "✅ 미션 성공 기록 요청점"
+    Server->>Server: "센서값 재검증 (8cm < 10cm? OK)점"
+    Server->>DB: "성공 로그 저장점"
+    Server-->>Web: "성공 응답점"
+    
+    Web->>User: "🎉 성공 화면 표시점"

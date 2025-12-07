@@ -1,0 +1,52 @@
+@startuml
+skinparam participant {
+  BackgroundColor #White
+  BorderColor #Black
+  FontName "Malgun Gothic"
+}
+
+actor "사용자" as User
+participant "웹 프론트엔드" as Web
+participant "FastAPI 서버" as Server
+database "데이터베이스" as DB
+participant "아두이노" as Arduino
+
+group #F0FFF0 백그라운드: 실시간 센서 데이터 수집
+    loop 0.2초 간격
+        Arduino -> Arduino: 거리/조도 측정
+        Arduino -> Server: 시리얼 데이터 전송 (USB)
+        Server -> Server: 메모리에 최신값 갱신
+    end
+end
+
+group #FFF5E6 스케줄러: 알람 발송
+    loop 1분 간격
+        Server -> DB: 현재 시간 스케줄 조회
+        DB --> Server: 스케줄 있음
+        Server -> User: 💬 카카오톡 알림 발송 (링크 포함)
+    end
+end
+
+User -> Web: 🔗 알림 링크 클릭 (/mission/start)
+Web -> Server: 랜덤 미션 요청
+Server --> Web: 미션 정보 반환 (타입: 센서, 조건: 거리 < 10cm)
+
+note over User, Arduino: 미션 수행 시작
+
+loop 폴링 (0.5초 간격)
+    Web -> Server: 현재 센서값 요청
+    Server --> Web: {거리: 15cm, 조도: 300lux}
+    Web -> User: 화면 게이지 업데이트
+    User -> Arduino: 👋 손을 가까이 댐 (센서 조작)
+end
+
+Web -> Server: 현재 센서값 재요청
+Server --> Web: {거리: 8cm} (조건 만족!)
+
+Web -> Server: ✅ 미션 성공 기록 요청
+Server -> Server: 센서값 재검증 (8cm < 10cm? OK)
+Server -> DB: 성공 로그 저장
+Server --> Web: 성공 응답
+
+Web -> User: 🎉 성공 화면 표시
+@enduml

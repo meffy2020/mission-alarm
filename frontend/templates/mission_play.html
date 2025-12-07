@@ -56,15 +56,31 @@
         let missionType = "";
         let sensorCondition = null; // {type, condition, threshold}
         let pollInterval = null;
+        
+        let successCount = 0;
+        const TARGET_SUCCESS = 3;
 
         async function loadMission() {
+            // Reset UI
+            document.getElementById('quiz-area').classList.add('hidden');
+            document.getElementById('sensor-area').classList.add('hidden');
+            document.getElementById('message').innerText = "";
+            document.getElementById('options-area').innerHTML = "";
+            document.getElementById('sensor-bar').style.width = "0%";
+            document.getElementById('sensor-status').innerText = "센서 연결 중...";
+            document.getElementById('sensor-status').style.color = "black";
+            if(pollInterval) clearInterval(pollInterval);
+
+            // Update Progress
+            document.getElementById('mission-title').innerText = `미션 로딩 중... (${successCount + 1}/${TARGET_SUCCESS})`;
+
             const res = await fetch('/mission/data/random');
             if (res.ok) {
                 const mission = await res.json();
                 currentMissionId = mission.id;
                 missionType = mission.type;
                 
-                document.getElementById('mission-title').innerText = mission.title;
+                document.getElementById('mission-title').innerText = `${mission.title} (${successCount + 1}/${TARGET_SUCCESS})`;
                 document.getElementById('mission-desc').innerText = mission.description;
                 correctAnswer = mission.answer;
 
@@ -131,8 +147,6 @@
                 if (currentVal >= minVal && currentVal <= maxVal) {
                     isSuccess = true;
                 }
-                // Update visual bar for range (center it visually roughly)
-                // Simple visual hack: just show raw percentage against max
             }
 
             // Visual feedback
@@ -162,32 +176,46 @@
             if (answer === correctAnswer) {
                 completeMission(true);
             } else {
-                document.getElementById('message').innerText = "❌ 틀렸습니다! 다시 시도하세요.";
+                document.getElementById('message').innerText = "❌ 틀렸습니다! 처음부터 다시 시작합니다.";
                 document.getElementById('message').style.color = "red";
+                // Reset progress on failure
+                successCount = 0;
+                setTimeout(() => {
+                    loadMission();
+                }, 1500);
             }
         }
 
         async function completeMission(success) {
-            if (getToken()) {
-                const res = await fetch('/mission/log', {
-                    method: 'POST',
-                    headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ mission_id: currentMissionId, success: success })
-                });
-                
-                // Double check if server accepted (for sensor strict mode)
-                if(res.ok) {
-                    const log = await res.json();
-                    if(log.success) {
+            const res = await fetch('/mission/log', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ mission_id: currentMissionId, success: success })
+            });
+            
+            // Double check if server accepted (for sensor strict mode)
+            if(res.ok) {
+                const log = await res.json();
+                if(log.success) {
+                    successCount++;
+                    if (successCount >= TARGET_SUCCESS) {
+                        document.getElementById('message').innerText = "🎉 모든 미션 완료!";
                         window.location.href = '/mission/success';
                     } else {
-                        document.getElementById('message').innerText = "❌ 실패! 센서 값이 조건과 다릅니다.";
-                         // Restart polling if failed
-                        if(missionType === 'sensor') startSensorPolling();
+                        document.getElementById('message').innerText = `✅ 성공! 다음 미션으로 이동합니다. (${successCount}/${TARGET_SUCCESS})`;
+                        document.getElementById('message').style.color = "green";
+                        setTimeout(() => {
+                            loadMission();
+                        }, 1000);
                     }
+                } else {
+                    document.getElementById('message').innerText = "❌ 실패! 센서 값이 조건과 다릅니다. 처음부터 다시 시작합니다.";
+                    successCount = 0;
+                     // Restart polling if failed
+                    setTimeout(() => {
+                        loadMission();
+                    }, 1500);
                 }
-            } else {
-                 window.location.href = '/mission/success';
             }
         }
 

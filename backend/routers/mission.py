@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session
 from fastapi.templating import Jinja2Templates
-from .. import models, schemas, crud, auth, database, serial_service
+from .. import models, schemas, crud, database, serial_service, kakao_service # Import kakao_service
 import json
 
 router = APIRouter(
@@ -40,7 +40,7 @@ def get_random_mission_data(db: Session = Depends(database.get_db)):
     return mission
 
 @router.post("/log", response_model=schemas.MissionLog)
-def log_mission_attempt(log: schemas.MissionLogCreate, current_user: models.User = Depends(auth.get_current_user), db: Session = Depends(database.get_db)):
+def log_mission_attempt(log: schemas.MissionLogCreate, db: Session = Depends(database.get_db)):
     # Server-side validation for sensor missions
     mission = db.query(models.Mission).filter(models.Mission.id == log.mission_id).first()
     
@@ -74,5 +74,15 @@ def log_mission_attempt(log: schemas.MissionLogCreate, current_user: models.User
              # Reject if sensor value doesn't match (Strict Mode)
              print(f"Mission Failed: {current_val} is not {condition} than {threshold}")
              log.success = False
+             # Send Kakao message for sensor failure
+             kakao_service.send_kakao_message(message_text=f"🚨 미션 실패 (센서): {current_val} {content.get('unit')} 값이 조건({condition} {threshold})에 맞지 않습니다.")
     
-    return crud.create_mission_log(db, log, user_id=current_user.id)
+    db_log = crud.create_mission_log(db, log) # Store the result in a variable
+
+    if not db_log.success:
+        # Send Kakao message for any mission failure (e.g., quiz failure)
+        # Only send if not already sent by sensor failure logic above
+        if not (mission and mission.type == "sensor" and not is_valid):
+            kakao_service.send_kakao_message(message_text=f"🚨 미션 실패: '{mission.title}' 미션을 통과하지 못했습니다.")
+    
+    return db_log

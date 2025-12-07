@@ -1,0 +1,53 @@
+flowchart TD
+    %% 스타일 정의
+    classDef startend fill:#f9f,stroke:#333,stroke-width:2px,color:black;
+    classDef process fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:black;
+    classDef decision fill:#fff9c4,stroke:#fbc02d,stroke-width:2px,color:black;
+    classDef arduino fill:#e8f5e9,stroke:#2e7d32,stroke-width:2px,stroke-dasharray: 5 5,color:black;
+
+    Start(["시작점"]):::startend --> Login["로그인 화면: 아이디/비번 입력점"]:::process
+    Login --> CheckLogin{"로그인 성공?점"}:::decision
+    
+    CheckLogin -- No --> Error["에러 메시지 출력점"]:::process
+    Error --> Login
+    
+    CheckLogin -- Yes --> Dashboard["대시보드: 스케줄 조회/등록점"]:::process
+    
+    %% 아두이노 병렬 프로세스 표현
+    subgraph Arduino_System ["아두이노 센서 시스템점"]
+        ArdStart(["센서 작동 시작점"]):::startend
+        Measure["거리/조도 측정점"]:::arduino
+        SerialOut["시리얼 데이터 전송점"]:::arduino
+        ArdLoop{"반복점"}:::decision
+        
+        ArdStart --> Measure --> SerialOut --> ArdLoop --> Measure
+    end
+
+    %% 백엔드 스케줄러
+    Dashboard --> Scheduler{"현재 시간 == 알람 시간?점"}:::decision
+    Scheduler -- No --> Wait["대기점"]:::process --> Scheduler
+    Scheduler -- Yes --> Kakao["카카오톡 알림 발송점"]:::process
+    
+    Kakao --> ClickLink["사용자: 링크 클릭점"]:::process
+    ClickLink --> MissionStart["미션 시작 화면점"]:::process
+    
+    MissionStart --> LoadMission["랜덤 미션 로드점"]:::process
+    LoadMission --> MissionType{"미션 타입?점"}:::decision
+    
+    %% 미션 분기
+    MissionType -- 센서 미션 --> SensorPlay["화면: 센서값 실시간 게이지점"]:::process
+    SensorPlay --> ReadSensor["아두이노 데이터 수신점"]:::process
+    ReadSensor --> CheckSensor{"조건 달성?점"}:::decision
+    CheckSensor -- No --> SensorPlay
+    
+    MissionType -- 퀴즈 미션 --> QuizPlay["화면: 퀴즈 풀기점"]:::process
+    QuizPlay --> CheckQuiz{"정답?점"}:::decision
+    CheckQuiz -- No --> QuizPlay
+    
+    CheckSensor -- Yes --> Success["미션 성공! DB 저장점"]:::process
+    CheckQuiz -- Yes --> Success
+    
+    Success --> End(["종료점"]):::startend
+
+    %% 연결선 스타일
+    linkStyle default stroke:#333,stroke-width:1px;

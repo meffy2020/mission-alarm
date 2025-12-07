@@ -1,0 +1,57 @@
+@startuml
+skinparam activity {
+  BackgroundColor #E1F5FE
+  BorderColor #0277BD
+  FontName "Malgun Gothic"
+}
+skinparam activityDiamond {
+  BackgroundColor #FFF9C4
+  BorderColor #FBC02D
+}
+skinparam note {
+  BackgroundColor #E8F5E9
+  BorderColor #2E7D32
+}
+
+start
+
+:로그인 화면: 아이디/비번 입력;
+if (로그인 성공?) then (No)
+  :에러 메시지 출력;
+  stop
+else (Yes)
+  :대시보드: 스케줄 조회/등록;
+endif
+
+partition "아두이노 센서 시스템" {
+    :센서 작동 시작;
+    repeat
+        :거리/조도 측정;
+        :시리얼 데이터 전송;
+    repeat while (반복)
+}
+
+if (현재 시간 == 알람 시간?) then (Yes)
+  :카카오톡 알림 발송;
+  :사용자: 링크 클릭;
+  :미션 시작 화면;
+  :랜덤 미션 로드;
+  
+  if (미션 타입?) then (센서 미션)
+    repeat
+      :화면: 센서값 실시간 게이지;
+      :아두이노 데이터 수신;
+    repeat while (조건 달성?) is (No)
+  else (퀴즈 미션)
+    repeat
+      :화면: 퀴즈 풀기;
+    repeat while (정답?) is (No)
+  endif
+  
+  :미션 성공! DB 저장;
+else (No)
+  :대기;
+endif
+
+stop
+@enduml

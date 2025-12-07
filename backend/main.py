@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.requests import Request
 from fastapi.responses import HTMLResponse
 from .database import engine, Base, SessionLocal
-from .routers import auth, schedule, mission, sensor
+from .routers import schedule, mission, sensor
 from .scheduler import start_scheduler
 from . import models, serial_service
 
@@ -17,7 +17,6 @@ app.mount("/static", StaticFiles(directory="frontend/static"), name="static")
 
 templates = Jinja2Templates(directory="frontend/templates")
 
-app.include_router(auth.router)
 app.include_router(schedule.router)
 app.include_router(mission.router)
 app.include_router(sensor.router)
